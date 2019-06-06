@@ -13,4 +13,12 @@ server.get('/', (req,res) => {
     }
 })
 
+server.get('/api/users', (req, res) => {
+    try {
+        
+    } catch (error) {
+
+    }
+})
+
 module.exports = server
