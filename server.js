@@ -2,6 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const bcrypt = require('bcrypt');
 const db = require('./data/model-db');
+const restricted = require('./data/auth/restricted-middleware');
 const server = express();
 
 server.use(express.json());
@@ -20,7 +21,7 @@ server.get('/', (req, res) => {
 });
 
 //GET find all users
-server.get('/api/users', async (req, res) => {
+server.get('/api/users', restricted, async (req, res) => {
     try {
         const getAllUsers = await db.find();
         res.json({ message: `Successfully retrieved all users`, getAllUsers });
@@ -33,7 +34,7 @@ server.get('/api/users', async (req, res) => {
 });
 
 //GET find user by id
-server.get('/api/users/:id', async (req, res) => {
+server.get('/api/users/:id', restricted, async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -71,19 +72,30 @@ server.post('/api/register', async (req, res) => {
 server.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
 
-    try {
-        const user = await db.findByUser(username)
-        if (!user || !bcrypt.compareSync(password, user.password)) {
-            return res.status(401).json({ error: 'Incorrect credentials' });
-        } else {
-            res.json({ message: `User is logged in`, user})
+    if (username && password) {
+        try {
+            const user = await db.findByUser(username);
+            if (user && bcrypt.compareSync(password, user.password)) {
+                return res
+                    .status(200)
+                    .json({ message: `Welcome ${user.username}` });
+            } else {
+                res.status(401).json({
+                    message: `Invalid credentials`
+                });
+            }
+        } catch (error) {
+            res.status(500).json({
+                error: `There was a problem logging in`,
+                error
+            });
         }
-    } catch (error) {
-        res.status(500).json({ error: `There was a problem logging in`, error})
+    } else {
+        res.status(400).json({ message: `Please provide valid credentials` });
     }
 });
 
-server.put('/api/users/:id', async (req, res) => {
+server.put('/api/users/:id', restricted, async (req, res) => {
     const { id } = req.params;
     const { body } = req;
 
@@ -101,7 +113,7 @@ server.put('/api/users/:id', async (req, res) => {
     }
 });
 
-server.delete('/api/users/:id', async (req, res) => {
+server.delete('/api/users/:id', restricted, async (req, res) => {
     const { id } = req.params;
 
     try {
