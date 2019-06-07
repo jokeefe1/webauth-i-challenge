@@ -5,7 +5,11 @@ function find() {
 }
 
 function findById(id) {
-    return db('users').where({ id }).find()
+    return db('users').where({ id }).first()
+}
+
+function findByUser(username) {
+    return db('users').where({ username }).first()
 }
 
 function add(user) {
@@ -24,6 +28,7 @@ function remove(id) {
 module.exports = {
     find,
     findById,
+    findByUser,
     add,
     update,
     remove

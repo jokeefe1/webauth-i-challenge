@@ -1,5 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
+const bcrypt = require('bcrypt');
 const db = require('./data/model-db');
 const server = express();
 
@@ -33,19 +34,27 @@ server.get('/api/users', async (req, res) => {
 
 //GET find user by id
 server.get('/api/users/:id', async (req, res) => {
-    const { id } = req.params
+    const { id } = req.params;
 
     try {
-        const userById = await db.findById(id)
-        res.json({ message: `Successfully retrieved user with id ${id}`, userById})
+        const userById = await db.findById(id);
+        res.json({
+            message: `Successfully retrieved user with id ${id}`,
+            userById
+        });
     } catch (error) {
-        res.status(500).json({ error: `There was a problem retrieving user with id ${id} from the database`, error})
+        res.status(500).json({
+            error: `There was a problem retrieving user with id ${id} from the database`,
+            error
+        });
     }
-})
+});
 
 //POST register new user
 server.post('/api/register', async (req, res) => {
     const user = req.body;
+    const hash = bcrypt.hashSync(user.password, 14);
+    user.password = hash;
 
     try {
         const registerUser = await db.add(user);
@@ -60,31 +69,53 @@ server.post('/api/register', async (req, res) => {
 
 //POST login user
 server.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+
     try {
-    } catch (error) {}
+        const user = await db.findByUser(username)
+        if (!user || !bcrypt.compareSync(password, user.password)) {
+            return res.status(401).json({ error: 'Incorrect credentials' });
+        } else {
+            res.json({ message: `User is logged in`, user})
+        }
+    } catch (error) {
+        res.status(500).json({ error: `There was a problem logging in`, error})
+    }
 });
 
 server.put('/api/users/:id', async (req, res) => {
-    const { id } = req.params
-    const { body } = req
+    const { id } = req.params;
+    const { body } = req;
 
     try {
-        const updatedUser = await db.update(id, body)
-        res.json({ message: `Successfully updated user with id ${id}`, updatedUser})    
+        const updatedUser = await db.update(id, body);
+        res.json({
+            message: `Successfully updated user with id ${id}`,
+            updatedUser
+        });
     } catch (error) {
-        res.status(500).json({ error: `There was a problem updating user with id ${id}`, updatedUser})
+        res.status(500).json({
+            error: `There was a problem updating user with id ${id}`,
+            updatedUser
+        });
     }
-})
+});
 
 server.delete('/api/users/:id', async (req, res) => {
-    const { id } = req.params
+    const { id } = req.params;
 
     try {
-        const deletedUser = db.remove(id)
-        res.json({ message: `Successfull deleted user with id ${id}`, deletedUser})     
+        const deletedUser = db.remove(id);
+        res.json({
+            message: `Successfull deleted user with id ${id}`,
+            deletedUser
+        });
     } catch (error) {
-        res.status(500).json({ error: `There was a problem removing user with id ${id}`, deletedUser})
+        res.status(500).json({
+            error: `There was a problem removing user with id ${id}`,
+            deletedUser
+        });
     }
-})
+});
 
 module.exports = server;
