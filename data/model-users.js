@@ -13,7 +13,7 @@ function findById(id) {
 }
 
 function findByUser(username) {
-    return db('users').where({ username })
+    return db('users').where({ username }).first()
 }
 
 function update(id, user) {
