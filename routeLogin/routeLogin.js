@@ -4,17 +4,15 @@ const bcrypt = require('bcryptjs')
 const router = express.Router()
 
 router.post('/', async (req, res) => {
-    const credentials = req.body
-    // const username = req.headers['x-username']
-    // const password = req.headers['x-password']
-    // console.log('Username', username)
-    // console.log('Password', password)
+    const username = req.headers['x-username']
+    const password = req.headers['x-password']
+  
     
-    if (credentials.username && credentials.password) {
+    if (username && password) {
         try {
-            const dbUser = await db.findByUser(credentials.username)
-            console.log(dbUser)
-            if (dbUser && bcrypt.compareSync(credentials.password, dbUser.password)) {
+            const dbUser = await db.findByUser(username)
+            if (dbUser && bcrypt.compareSync(password, dbUser.password)) {
+                req.session.user = dbUser
                 res.json({ message: `Successfully logged in user`, dbUser})
             } else {
                 res.status(401).json({ message: `Login failed`})
